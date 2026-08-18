@@ -1,0 +1,44 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #ffffff;
+  color: #10213f;
+}
+
+button,
+input {
+  font-family: inherit;
+}
+
+a {
+  text-decoration: none;
+}
+
+/* =========================
+   HEADER FONT
+========================= */
+.header {
+  font-family: "Poppins", sans-serif;
+}
+
+.header .logo {
+  font-family: "Poppins", sans-serif;
+  font-weight: 700;
+}
+
+.header nav a {
+  font-family: "Poppins", sans-serif;
+  font-weight: 500;
+}
