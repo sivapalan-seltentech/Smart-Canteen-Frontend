@@ -19,6 +19,11 @@ const emptyFood = {
   description: "",
 };
 
+const emptyCategory = {
+  name: "",
+  description: "",
+};
+
 const emptyEmployee = {
   name: "",
   employeeId: "",
@@ -28,8 +33,21 @@ const emptyEmployee = {
   phone: "",
 };
 
+const emptyStudent = {
+  name: "",
+  studentId: "",
+  email: "",
+  phone: "",
+  department: "",
+  year: "",
+};
+
 function AdminDashboard() {
   const [tab, setTab] = useState("overview");
+
+  // =====================================================
+  // DATABASE DATA
+  // =====================================================
 
   const [stats, setStats] = useState(null);
   const [menu, setMenu] = useState([]);
@@ -38,18 +56,48 @@ function AdminDashboard() {
   const [employees, setEmployees] = useState([]);
   const [orders, setOrders] = useState([]);
 
+  // =====================================================
+  // CREATE FORMS
+  // =====================================================
+
   const [newFood, setNewFood] = useState(emptyFood);
-  const [newCategory, setNewCategory] = useState({
-    name: "",
-    description: "",
-  });
+
+  const [newCategory, setNewCategory] =
+    useState(emptyCategory);
+
   const [newEmployee, setNewEmployee] =
     useState(emptyEmployee);
+
+  // =====================================================
+  // IMAGE
+  // =====================================================
 
   const [foodImagePreview, setFoodImagePreview] =
     useState("");
 
-  const [loading, setLoading] = useState(true);
+  // =====================================================
+  // UPDATE STATES
+  // =====================================================
+
+  const [editingFood, setEditingFood] =
+    useState(null);
+
+  const [editingCategory, setEditingCategory] =
+    useState(null);
+
+  const [editingEmployee, setEditingEmployee] =
+    useState(null);
+
+  const [editingStudent, setEditingStudent] =
+    useState(null);
+
+  // =====================================================
+  // LOADING
+  // =====================================================
+
+  const [loading, setLoading] =
+    useState(true);
+
   const [actionLoading, setActionLoading] =
     useState(false);
 
@@ -100,7 +148,8 @@ function AdminDashboard() {
               (user) =>
                 String(
                   user?.role || "STUDENT"
-                ).toUpperCase() === "STUDENT"
+                ).toUpperCase() ===
+                "STUDENT"
             )
           : []
       );
@@ -131,10 +180,6 @@ function AdminDashboard() {
     }
   };
 
-  // =====================================================
-  // INITIAL LOAD
-  // =====================================================
-
   useEffect(() => {
     loadAll();
   }, []);
@@ -147,14 +192,11 @@ function AdminDashboard() {
     () => ({
       orders: orders.length,
 
-      students:
-        students.length,
+      students: students.length,
 
-      employees:
-        employees.length,
+      employees: employees.length,
 
-      menu:
-        menu.length,
+      menu: menu.length,
 
       pending: orders.filter(
         (order) =>
@@ -180,9 +222,7 @@ function AdminDashboard() {
   // IMAGE UPLOAD
   // =====================================================
 
-  const handleImageUpload = (
-    event
-  ) => {
+  const handleImageUpload = (event) => {
     const file =
       event.target.files?.[0];
 
@@ -223,18 +263,14 @@ function AdminDashboard() {
         })
       );
 
-      setFoodImagePreview(
-        image
-      );
+      setFoodImagePreview(image);
     };
 
-    reader.readAsDataURL(
-      file
-    );
+    reader.readAsDataURL(file);
   };
 
   // =====================================================
-  // ADD CATEGORY
+  // CATEGORY - CREATE
   // =====================================================
 
   const addCategory = async (
@@ -263,11 +299,6 @@ function AdminDashboard() {
             newCategory.description.trim(),
         });
 
-      /*
-       * Update category locally.
-       * No full dashboard reload.
-       */
-
       if (created) {
         setCategories(
           (prev) => [
@@ -279,10 +310,9 @@ function AdminDashboard() {
         await loadAll();
       }
 
-      setNewCategory({
-        name: "",
-        description: "",
-      });
+      setNewCategory(
+        emptyCategory
+      );
     } catch (err) {
       alert(
         err.message ||
@@ -294,7 +324,84 @@ function AdminDashboard() {
   };
 
   // =====================================================
-  // DELETE CATEGORY
+  // CATEGORY - START EDIT
+  // =====================================================
+
+  const startEditCategory = (
+    category
+  ) => {
+    setEditingCategory({
+      id: category.id,
+      name: category.name || "",
+      description:
+        category.description || "",
+    });
+  };
+
+  // =====================================================
+  // CATEGORY - UPDATE
+  // =====================================================
+
+  const updateCategory = async (
+    event
+  ) => {
+    event.preventDefault();
+
+    if (
+      !editingCategory?.name?.trim()
+    ) {
+      alert(
+        "Category name is required."
+      );
+      return;
+    }
+
+    try {
+      setActionLoading(true);
+
+      const updated =
+        await api.updateCategory(
+          editingCategory.id,
+          {
+            name:
+              editingCategory.name.trim(),
+
+            description:
+              (
+                editingCategory
+                  .description || ""
+              ).trim(),
+          }
+        );
+
+      setCategories(
+        (prev) =>
+          prev.map(
+            (category) =>
+              category.id ===
+              editingCategory.id
+                ? {
+                    ...category,
+                    ...(updated ||
+                      editingCategory),
+                  }
+                : category
+          )
+      );
+
+      setEditingCategory(null);
+    } catch (err) {
+      alert(
+        err.message ||
+          "Unable to update category."
+      );
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // =====================================================
+  // CATEGORY - DELETE
   // =====================================================
 
   const deleteCategory = async (
@@ -312,10 +419,6 @@ function AdminDashboard() {
       setActionLoading(true);
 
       await api.deleteCategory(id);
-
-      /*
-       * Remove only deleted category
-       */
 
       setCategories(
         (prev) =>
@@ -335,7 +438,7 @@ function AdminDashboard() {
   };
 
   // =====================================================
-  // ADD FOOD
+  // FOOD - CREATE
   // =====================================================
 
   const addFood = async (
@@ -363,9 +466,7 @@ function AdminDashboard() {
             newFood.name.trim(),
 
           price:
-            Number(
-              newFood.price
-            ),
+            Number(newFood.price),
 
           image:
             newFood.image || "",
@@ -376,8 +477,7 @@ function AdminDashboard() {
 
           rating:
             Number(
-              newFood.rating ||
-                4.5
+              newFood.rating || 4.5
             ),
 
           description:
@@ -391,10 +491,6 @@ function AdminDashboard() {
           },
         });
 
-      /*
-       * Add new food locally.
-       */
-
       if (created) {
         setMenu(
           (prev) => [
@@ -406,10 +502,7 @@ function AdminDashboard() {
         await loadAll();
       }
 
-      setNewFood(
-        emptyFood
-      );
-
+      setNewFood(emptyFood);
       setFoodImagePreview("");
 
       const input =
@@ -431,7 +524,132 @@ function AdminDashboard() {
   };
 
   // =====================================================
-  // DELETE FOOD
+  // FOOD - START EDIT
+  // =====================================================
+
+  const startEditFood = (
+    item
+  ) => {
+    setEditingFood({
+      id: item.id,
+
+      name:
+        item.name || "",
+
+      categoryId:
+        item.category?.id
+          ? String(
+              item.category.id
+            )
+          : "",
+
+      price:
+        item.price ?? "",
+
+      image:
+        item.image || "",
+
+      emoji:
+        item.emoji || "🍽️",
+
+      rating:
+        item.rating ?? 4.5,
+
+      description:
+        item.description || "",
+    });
+  };
+
+  // =====================================================
+  // FOOD - UPDATE
+  // =====================================================
+
+  const updateFood = async (
+    event
+  ) => {
+    event.preventDefault();
+
+    if (
+      !editingFood?.name?.trim() ||
+      !editingFood?.price ||
+      !editingFood?.categoryId
+    ) {
+      alert(
+        "Food name, category and price are required."
+      );
+      return;
+    }
+
+    try {
+      setActionLoading(true);
+
+      const payload = {
+        name:
+          editingFood.name.trim(),
+
+        price:
+          Number(editingFood.price),
+
+        image:
+          editingFood.image || "",
+
+        emoji:
+          editingFood.emoji ||
+          "🍽️",
+
+        rating:
+          Number(
+            editingFood.rating || 4.5
+          ),
+
+        description:
+          (
+            editingFood.description ||
+            ""
+          ).trim(),
+
+        category: {
+          id:
+            Number(
+              editingFood.categoryId
+            ),
+        },
+      };
+
+      const updated =
+        await api.updateMenuItem(
+          editingFood.id,
+          payload
+        );
+
+      setMenu(
+        (prev) =>
+          prev.map(
+            (item) =>
+              item.id ===
+              editingFood.id
+                ? {
+                    ...item,
+                    ...payload,
+                    ...(updated || {}),
+                  }
+                : item
+          )
+      );
+
+      setEditingFood(null);
+    } catch (err) {
+      alert(
+        err.message ||
+          "Unable to update food."
+      );
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // =====================================================
+  // FOOD - DELETE
   // =====================================================
 
   const removeFood = async (
@@ -468,7 +686,7 @@ function AdminDashboard() {
   };
 
   // =====================================================
-  // ADD EMPLOYEE
+  // EMPLOYEE - CREATE
   // =====================================================
 
   const addEmployee = async (
@@ -539,7 +757,121 @@ function AdminDashboard() {
   };
 
   // =====================================================
-  // DELETE EMPLOYEE
+  // EMPLOYEE - START EDIT
+  // =====================================================
+
+  const startEditEmployee = (
+    employee
+  ) => {
+    setEditingEmployee({
+      id: employee.id,
+
+      name:
+        employee.name || "",
+
+      employeeId:
+        employee.employeeId || "",
+
+      username:
+        employee.username || "",
+
+      password: "",
+
+      email:
+        employee.email || "",
+
+      phone:
+        employee.phone || "",
+    });
+  };
+
+  // =====================================================
+  // EMPLOYEE - UPDATE
+  // =====================================================
+
+  const updateEmployee = async (
+    event
+  ) => {
+    event.preventDefault();
+
+    if (
+      !editingEmployee?.name?.trim() ||
+      !editingEmployee?.employeeId?.trim() ||
+      !editingEmployee?.username?.trim()
+    ) {
+      alert(
+        "Name, Employee ID and username are required."
+      );
+      return;
+    }
+
+    try {
+      setActionLoading(true);
+
+      const payload = {
+        name:
+          editingEmployee.name.trim(),
+
+        employeeId:
+          editingEmployee.employeeId.trim(),
+
+        username:
+          editingEmployee.username.trim(),
+
+        email:
+          editingEmployee.email.trim() ||
+          null,
+
+        phone:
+          editingEmployee.phone.trim() ||
+          null,
+      };
+
+      /*
+       * Only send password if admin
+       * entered a new password.
+       */
+      if (
+        editingEmployee.password
+      ) {
+        payload.password =
+          editingEmployee.password;
+      }
+
+      const updated =
+        await api.updateEmployee(
+          editingEmployee.id,
+          payload
+        );
+
+      setEmployees(
+        (prev) =>
+          prev.map(
+            (employee) =>
+              employee.id ===
+              editingEmployee.id
+                ? {
+                    ...employee,
+                    ...payload,
+                    ...(updated || {}),
+                  }
+                : employee
+          )
+      );
+
+      setEditingEmployee(null);
+    } catch (err) {
+      alert(
+        err.message ||
+          "Unable to update employee."
+      );
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // =====================================================
+  // EMPLOYEE - DELETE
   // =====================================================
 
   const removeEmployee = async (
@@ -576,7 +908,113 @@ function AdminDashboard() {
   };
 
   // =====================================================
-  // DELETE STUDENT
+  // STUDENT - START EDIT
+  // =====================================================
+
+  const startEditStudent = (
+    student
+  ) => {
+    setEditingStudent({
+      id: student.id,
+
+      name:
+        student.name ||
+        student.username ||
+        "",
+
+      studentId:
+        student.studentId || "",
+
+      email:
+        student.email || "",
+
+      phone:
+        student.phone || "",
+
+      department:
+        student.department || "",
+
+      year:
+        student.year || "",
+    });
+  };
+
+  // =====================================================
+  // STUDENT - UPDATE
+  // =====================================================
+
+  const updateStudent = async (
+    event
+  ) => {
+    event.preventDefault();
+
+    if (
+      !editingStudent?.name?.trim() ||
+      !editingStudent?.studentId?.trim()
+    ) {
+      alert(
+        "Student name and Student ID are required."
+      );
+      return;
+    }
+
+    try {
+      setActionLoading(true);
+
+      const payload = {
+        name:
+          editingStudent.name.trim(),
+
+        studentId:
+          editingStudent.studentId.trim(),
+
+        email:
+          editingStudent.email.trim(),
+
+        phone:
+          editingStudent.phone.trim(),
+
+        department:
+          editingStudent.department,
+
+        year:
+          editingStudent.year,
+      };
+
+      const updated =
+        await api.updateUser(
+          editingStudent.id,
+          payload
+        );
+
+      setStudents(
+        (prev) =>
+          prev.map(
+            (student) =>
+              student.id ===
+              editingStudent.id
+                ? {
+                    ...student,
+                    ...payload,
+                    ...(updated || {}),
+                  }
+                : student
+          )
+      );
+
+      setEditingStudent(null);
+    } catch (err) {
+      alert(
+        err.message ||
+          "Unable to update student."
+      );
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // =====================================================
+  // STUDENT - DELETE
   // =====================================================
 
   const deleteStudent = async (
@@ -613,7 +1051,7 @@ function AdminDashboard() {
   };
 
   // =====================================================
-  // ASSIGN EMPLOYEE - FIXED
+  // ORDER - ASSIGN EMPLOYEE
   // =====================================================
 
   const assignEmployee = async (
@@ -627,21 +1065,11 @@ function AdminDashboard() {
     try {
       setActionLoading(true);
 
-      /*
-       * Backend/MySQL update
-       */
       const updated =
         await api.assignEmployee(
           orderId,
           Number(employeeId)
         );
-
-      /*
-       * IMPORTANT:
-       * Do NOT call loadAll().
-       *
-       * Update only this order in React state.
-       */
 
       setOrders(
         (prevOrders) =>
@@ -684,7 +1112,7 @@ function AdminDashboard() {
   };
 
   // =====================================================
-  // UPDATE ORDER STATUS - FIXED
+  // ORDER - UPDATE STATUS
   // =====================================================
 
   const updateOrderStatus = async (
@@ -694,21 +1122,11 @@ function AdminDashboard() {
     try {
       setActionLoading(true);
 
-      /*
-       * Backend/MySQL update
-       */
       const updated =
         await api.updateOrderStatus(
           orderId,
           status
         );
-
-      /*
-       * IMPORTANT:
-       * No loadAll().
-       *
-       * Only update selected order.
-       */
 
       setOrders(
         (prevOrders) =>
@@ -819,6 +1237,8 @@ function AdminDashboard() {
 
       <main className="admin-main">
 
+        {/* TOPBAR */}
+
         <div className="admin-topbar">
 
           <div>
@@ -843,6 +1263,8 @@ function AdminDashboard() {
           </div>
 
         </div>
+
+        {/* ERROR */}
 
         {error && (
           <div className="admin-error">
@@ -873,35 +1295,30 @@ function AdminDashboard() {
                       computedStats.orders,
                     "📦",
                   ],
-
                   [
                     "Students",
                     stats?.totalStudents ??
                       computedStats.students,
                     "🎓",
                   ],
-
                   [
                     "Employees",
                     stats?.totalEmployees ??
                       computedStats.employees,
                     "👨‍🍳",
                   ],
-
                   [
                     "Foods",
                     stats?.totalFoods ??
                       computedStats.menu,
                     "🍔",
                   ],
-
                   [
                     "Pending",
                     stats?.pendingOrders ??
                       computedStats.pending,
                     "⏳",
                   ],
-
                   [
                     "Categories",
                     stats?.totalCategories ??
@@ -937,11 +1354,12 @@ function AdminDashboard() {
             )}
 
             {/* =================================================
-                MENU
+                MENU MANAGEMENT
             ================================================= */}
 
             {tab === "menu" && (
               <>
+
                 <section className="admin-content-grid">
 
                   {/* CATEGORY */}
@@ -976,7 +1394,7 @@ function AdminDashboard() {
                       />
 
                       <input
-                        placeholder="Description (optional)"
+                        placeholder="Description"
                         value={
                           newCategory.description
                         }
@@ -992,6 +1410,7 @@ function AdminDashboard() {
                       />
 
                       <button
+                        type="submit"
                         className="admin-primary-btn"
                         disabled={
                           actionLoading
@@ -1027,25 +1446,46 @@ function AdminDashboard() {
                             </b>
 
                             <small>
-                              {category.description ||
-                                "No description"}
+                              {
+                                category.description ||
+                                "No description"
+                              }
                             </small>
                           </span>
 
-                          <button
-                            type="button"
-                            className="admin-danger-btn"
-                            onClick={() =>
-                              deleteCategory(
-                                category.id
-                              )
-                            }
-                            disabled={
-                              actionLoading
-                            }
-                          >
-                            Delete
-                          </button>
+                          <div className="admin-row-actions">
+
+                            <button
+                              type="button"
+                              className="admin-update-btn"
+                              onClick={() =>
+                                startEditCategory(
+                                  category
+                                )
+                              }
+                              disabled={
+                                actionLoading
+                              }
+                            >
+                              Update
+                            </button>
+
+                            <button
+                              type="button"
+                              className="admin-danger-btn"
+                              onClick={() =>
+                                deleteCategory(
+                                  category.id
+                                )
+                              }
+                              disabled={
+                                actionLoading
+                              }
+                            >
+                              Delete
+                            </button>
+
+                          </div>
 
                         </div>
                       )
@@ -1053,7 +1493,7 @@ function AdminDashboard() {
 
                   </div>
 
-                  {/* FOOD */}
+                  {/* FOOD CREATE */}
 
                   <div className="admin-panel">
 
@@ -1222,6 +1662,7 @@ function AdminDashboard() {
                       />
 
                       <button
+                        type="submit"
                         className="admin-primary-btn"
                         disabled={
                           actionLoading
@@ -1251,7 +1692,9 @@ function AdminDashboard() {
                       (item) => (
                         <div
                           className="admin-row"
-                          key={item.id}
+                          key={
+                            item.id
+                          }
                         >
 
                           <span>
@@ -1260,8 +1703,10 @@ function AdminDashboard() {
                             </b>
 
                             <small>
-                              {item.category?.name ||
-                                "-"}{" "}
+                              {
+                                item.category
+                                  ?.name
+                              }{" "}
                               • ₹
                               {
                                 item.price
@@ -1269,20 +1714,39 @@ function AdminDashboard() {
                             </small>
                           </span>
 
-                          <button
-                            type="button"
-                            className="admin-danger-btn"
-                            onClick={() =>
-                              removeFood(
-                                item.id
-                              )
-                            }
-                            disabled={
-                              actionLoading
-                            }
-                          >
-                            Delete
-                          </button>
+                          <div className="admin-row-actions">
+
+                            <button
+                              type="button"
+                              className="admin-update-btn"
+                              onClick={() =>
+                                startEditFood(
+                                  item
+                                )
+                              }
+                              disabled={
+                                actionLoading
+                              }
+                            >
+                              Update
+                            </button>
+
+                            <button
+                              type="button"
+                              className="admin-danger-btn"
+                              onClick={() =>
+                                removeFood(
+                                  item.id
+                                )
+                              }
+                              disabled={
+                                actionLoading
+                              }
+                            >
+                              Delete
+                            </button>
+
+                          </div>
 
                         </div>
                       )
@@ -1349,20 +1813,39 @@ function AdminDashboard() {
 
                         </span>
 
-                        <button
-                          type="button"
-                          className="admin-danger-btn"
-                          onClick={() =>
-                            deleteStudent(
-                              student.id
-                            )
-                          }
-                          disabled={
-                            actionLoading
-                          }
-                        >
-                          Remove
-                        </button>
+                        <div className="admin-row-actions">
+
+                          <button
+                            type="button"
+                            className="admin-update-btn"
+                            onClick={() =>
+                              startEditStudent(
+                                student
+                              )
+                            }
+                            disabled={
+                              actionLoading
+                            }
+                          >
+                            Update
+                          </button>
+
+                          <button
+                            type="button"
+                            className="admin-danger-btn"
+                            onClick={() =>
+                              deleteStudent(
+                                student.id
+                              )
+                            }
+                            disabled={
+                              actionLoading
+                            }
+                          >
+                            Remove
+                          </button>
+
+                        </div>
 
                       </div>
                     )
@@ -1383,6 +1866,8 @@ function AdminDashboard() {
 
             {tab === "employees" && (
               <section className="admin-content-grid">
+
+                {/* CREATE EMPLOYEE */}
 
                 <div className="admin-panel">
 
@@ -1460,6 +1945,7 @@ function AdminDashboard() {
                     )}
 
                     <button
+                      type="submit"
                       className="admin-primary-btn"
                       disabled={
                         actionLoading
@@ -1471,6 +1957,8 @@ function AdminDashboard() {
                   </form>
 
                 </div>
+
+                {/* EMPLOYEE LIST */}
 
                 <div className="admin-panel">
 
@@ -1516,20 +2004,39 @@ function AdminDashboard() {
 
                           </span>
 
-                          <button
-                            type="button"
-                            className="admin-danger-btn"
-                            onClick={() =>
-                              removeEmployee(
-                                employee.id
-                              )
-                            }
-                            disabled={
-                              actionLoading
-                            }
-                          >
-                            Delete
-                          </button>
+                          <div className="admin-row-actions">
+
+                            <button
+                              type="button"
+                              className="admin-update-btn"
+                              onClick={() =>
+                                startEditEmployee(
+                                  employee
+                                )
+                              }
+                              disabled={
+                                actionLoading
+                              }
+                            >
+                              Update
+                            </button>
+
+                            <button
+                              type="button"
+                              className="admin-danger-btn"
+                              onClick={() =>
+                                removeEmployee(
+                                  employee.id
+                                )
+                              }
+                              disabled={
+                                actionLoading
+                              }
+                            >
+                              Delete
+                            </button>
+
+                          </div>
 
                         </div>
                       )
@@ -1570,8 +2077,6 @@ function AdminDashboard() {
                             order.id
                           }
                         >
-
-                          {/* ORDER HEADER */}
 
                           <div className="admin-order-main">
 
@@ -1631,11 +2136,9 @@ function AdminDashboard() {
 
                           </div>
 
-                          {/* CONTROLS */}
-
                           <div className="admin-order-controls">
 
-                            {/* ASSIGN EMPLOYEE */}
+                            {/* ASSIGN */}
 
                             <label>
 
@@ -1748,8 +2251,6 @@ function AdminDashboard() {
 
                           </div>
 
-                          {/* ASSIGNED EMPLOYEE */}
-
                           <div className="admin-assigned-info">
 
                             👨‍🍳 Assigned to:{" "}
@@ -1798,6 +2299,723 @@ function AdminDashboard() {
         )}
 
       </main>
+
+      {/* =====================================================
+          CATEGORY UPDATE MODAL
+      ===================================================== */}
+
+      {editingCategory && (
+        <div className="admin-modal-overlay">
+
+          <div className="admin-modal">
+
+            <div className="admin-modal-header">
+
+              <div>
+                <span className="admin-badge">
+                  UPDATE
+                </span>
+
+                <h2>
+                  Update Category
+                </h2>
+              </div>
+
+              <button
+                type="button"
+                className="admin-modal-close"
+                onClick={() =>
+                  setEditingCategory(
+                    null
+                  )
+                }
+              >
+                ×
+              </button>
+
+            </div>
+
+            <form
+              className="admin-form"
+              onSubmit={
+                updateCategory
+              }
+            >
+
+              <input
+                placeholder="Category name"
+                value={
+                  editingCategory.name
+                }
+                onChange={(e) =>
+                  setEditingCategory(
+                    (prev) => ({
+                      ...prev,
+                      name:
+                        e.target.value,
+                    })
+                  )
+                }
+              />
+
+              <textarea
+                placeholder="Description"
+                value={
+                  editingCategory.description
+                }
+                onChange={(e) =>
+                  setEditingCategory(
+                    (prev) => ({
+                      ...prev,
+                      description:
+                        e.target.value,
+                    })
+                  )
+                }
+              />
+
+              <div className="admin-modal-actions">
+
+                <button
+                  type="button"
+                  className="admin-cancel-btn"
+                  onClick={() =>
+                    setEditingCategory(
+                      null
+                    )
+                  }
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="submit"
+                  className="admin-update-btn"
+                  disabled={
+                    actionLoading
+                  }
+                >
+                  Update Category
+                </button>
+
+              </div>
+
+            </form>
+
+          </div>
+
+        </div>
+      )}
+
+      {/* =====================================================
+          FOOD UPDATE MODAL
+      ===================================================== */}
+
+      {editingFood && (
+        <div className="admin-modal-overlay">
+
+          <div className="admin-modal admin-modal-large">
+
+            <div className="admin-modal-header">
+
+              <div>
+                <span className="admin-badge">
+                  UPDATE
+                </span>
+
+                <h2>
+                  Update Food
+                </h2>
+              </div>
+
+              <button
+                type="button"
+                className="admin-modal-close"
+                onClick={() =>
+                  setEditingFood(null)
+                }
+              >
+                ×
+              </button>
+
+            </div>
+
+            <form
+              className="admin-form"
+              onSubmit={updateFood}
+            >
+
+              <input
+                placeholder="Food name"
+                value={
+                  editingFood.name
+                }
+                onChange={(e) =>
+                  setEditingFood(
+                    (prev) => ({
+                      ...prev,
+                      name:
+                        e.target.value,
+                    })
+                  )
+                }
+              />
+
+              <select
+                value={
+                  editingFood.categoryId
+                }
+                onChange={(e) =>
+                  setEditingFood(
+                    (prev) => ({
+                      ...prev,
+                      categoryId:
+                        e.target.value,
+                    })
+                  )
+                }
+              >
+
+                <option value="">
+                  Select category
+                </option>
+
+                {categories.map(
+                  (category) => (
+                    <option
+                      key={
+                        category.id
+                      }
+                      value={
+                        category.id
+                      }
+                    >
+                      {
+                        category.name
+                      }
+                    </option>
+                  )
+                )}
+
+              </select>
+
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder="Price"
+                value={
+                  editingFood.price
+                }
+                onChange={(e) =>
+                  setEditingFood(
+                    (prev) => ({
+                      ...prev,
+                      price:
+                        e.target.value,
+                    })
+                  )
+                }
+              />
+
+              <input
+                placeholder="Emoji"
+                value={
+                  editingFood.emoji
+                }
+                onChange={(e) =>
+                  setEditingFood(
+                    (prev) => ({
+                      ...prev,
+                      emoji:
+                        e.target.value,
+                    })
+                  )
+                }
+              />
+
+              <input
+                type="number"
+                min="0"
+                max="5"
+                step="0.1"
+                placeholder="Rating"
+                value={
+                  editingFood.rating
+                }
+                onChange={(e) =>
+                  setEditingFood(
+                    (prev) => ({
+                      ...prev,
+                      rating:
+                        e.target.value,
+                    })
+                  )
+                }
+              />
+
+              <input
+                placeholder="Image URL / image data"
+                value={
+                  editingFood.image
+                }
+                onChange={(e) =>
+                  setEditingFood(
+                    (prev) => ({
+                      ...prev,
+                      image:
+                        e.target.value,
+                    })
+                  )
+                }
+              />
+
+              <textarea
+                placeholder="Description"
+                value={
+                  editingFood.description
+                }
+                onChange={(e) =>
+                  setEditingFood(
+                    (prev) => ({
+                      ...prev,
+                      description:
+                        e.target.value,
+                    })
+                  )
+                }
+              />
+
+              <div className="admin-modal-actions">
+
+                <button
+                  type="button"
+                  className="admin-cancel-btn"
+                  onClick={() =>
+                    setEditingFood(null)
+                  }
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="submit"
+                  className="admin-update-btn"
+                  disabled={
+                    actionLoading
+                  }
+                >
+                  Update Food
+                </button>
+
+              </div>
+
+            </form>
+
+          </div>
+
+        </div>
+      )}
+
+      {/* =====================================================
+          EMPLOYEE UPDATE MODAL
+      ===================================================== */}
+
+      {editingEmployee && (
+        <div className="admin-modal-overlay">
+
+          <div className="admin-modal">
+
+            <div className="admin-modal-header">
+
+              <div>
+                <span className="admin-badge">
+                  UPDATE
+                </span>
+
+                <h2>
+                  Update Employee
+                </h2>
+              </div>
+
+              <button
+                type="button"
+                className="admin-modal-close"
+                onClick={() =>
+                  setEditingEmployee(
+                    null
+                  )
+                }
+              >
+                ×
+              </button>
+
+            </div>
+
+            <form
+              className="admin-form"
+              onSubmit={
+                updateEmployee
+              }
+            >
+
+              <input
+                placeholder="Name"
+                value={
+                  editingEmployee.name
+                }
+                onChange={(e) =>
+                  setEditingEmployee(
+                    (prev) => ({
+                      ...prev,
+                      name:
+                        e.target.value,
+                    })
+                  )
+                }
+              />
+
+              <input
+                placeholder="Employee ID"
+                value={
+                  editingEmployee.employeeId
+                }
+                onChange={(e) =>
+                  setEditingEmployee(
+                    (prev) => ({
+                      ...prev,
+                      employeeId:
+                        e.target.value,
+                    })
+                  )
+                }
+              />
+
+              <input
+                placeholder="Username"
+                value={
+                  editingEmployee.username
+                }
+                onChange={(e) =>
+                  setEditingEmployee(
+                    (prev) => ({
+                      ...prev,
+                      username:
+                        e.target.value,
+                    })
+                  )
+                }
+              />
+
+              <input
+                type="email"
+                placeholder="Email"
+                value={
+                  editingEmployee.email
+                }
+                onChange={(e) =>
+                  setEditingEmployee(
+                    (prev) => ({
+                      ...prev,
+                      email:
+                        e.target.value,
+                    })
+                  )
+                }
+              />
+
+              <input
+                placeholder="Phone"
+                value={
+                  editingEmployee.phone
+                }
+                onChange={(e) =>
+                  setEditingEmployee(
+                    (prev) => ({
+                      ...prev,
+                      phone:
+                        e.target.value,
+                    })
+                  )
+                }
+              />
+
+              <input
+                type="password"
+                placeholder="New password (optional)"
+                value={
+                  editingEmployee.password
+                }
+                onChange={(e) =>
+                  setEditingEmployee(
+                    (prev) => ({
+                      ...prev,
+                      password:
+                        e.target.value,
+                    })
+                  )
+                }
+              />
+
+              <small className="admin-form-hint">
+                Leave password empty if
+                you don't want to change it.
+              </small>
+
+              <div className="admin-modal-actions">
+
+                <button
+                  type="button"
+                  className="admin-cancel-btn"
+                  onClick={() =>
+                    setEditingEmployee(
+                      null
+                    )
+                  }
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="submit"
+                  className="admin-update-btn"
+                  disabled={
+                    actionLoading
+                  }
+                >
+                  Update Employee
+                </button>
+
+              </div>
+
+            </form>
+
+          </div>
+
+        </div>
+      )}
+
+      {/* =====================================================
+          STUDENT UPDATE MODAL
+      ===================================================== */}
+
+      {editingStudent && (
+        <div className="admin-modal-overlay">
+
+          <div className="admin-modal">
+
+            <div className="admin-modal-header">
+
+              <div>
+                <span className="admin-badge">
+                  UPDATE
+                </span>
+
+                <h2>
+                  Update Student
+                </h2>
+              </div>
+
+              <button
+                type="button"
+                className="admin-modal-close"
+                onClick={() =>
+                  setEditingStudent(
+                    null
+                  )
+                }
+              >
+                ×
+              </button>
+
+            </div>
+
+            <form
+              className="admin-form"
+              onSubmit={
+                updateStudent
+              }
+            >
+
+              <input
+                placeholder="Student Name"
+                value={
+                  editingStudent.name
+                }
+                onChange={(e) =>
+                  setEditingStudent(
+                    (prev) => ({
+                      ...prev,
+                      name:
+                        e.target.value,
+                    })
+                  )
+                }
+              />
+
+              <input
+                placeholder="Student ID"
+                value={
+                  editingStudent.studentId
+                }
+                onChange={(e) =>
+                  setEditingStudent(
+                    (prev) => ({
+                      ...prev,
+                      studentId:
+                        e.target.value,
+                    })
+                  )
+                }
+              />
+
+              <input
+                type="email"
+                placeholder="Email"
+                value={
+                  editingStudent.email
+                }
+                onChange={(e) =>
+                  setEditingStudent(
+                    (prev) => ({
+                      ...prev,
+                      email:
+                        e.target.value,
+                    })
+                  )
+                }
+              />
+
+              <input
+                placeholder="Phone"
+                value={
+                  editingStudent.phone
+                }
+                onChange={(e) =>
+                  setEditingStudent(
+                    (prev) => ({
+                      ...prev,
+                      phone:
+                        e.target.value,
+                    })
+                  )
+                }
+              />
+
+              <select
+                value={
+                  editingStudent.department
+                }
+                onChange={(e) =>
+                  setEditingStudent(
+                    (prev) => ({
+                      ...prev,
+                      department:
+                        e.target.value,
+                    })
+                  )
+                }
+              >
+
+                <option value="">
+                  Select Department
+                </option>
+
+                <option value="Information Technology">
+                  Information Technology
+                </option>
+
+                <option value="Computer Science Engineering">
+                  Computer Science Engineering
+                </option>
+
+                <option value="Electronics and Communication Engineering">
+                  Electronics and Communication Engineering
+                </option>
+
+                <option value="Electrical and Electronics Engineering">
+                  Electrical and Electronics Engineering
+                </option>
+
+                <option value="Mechanical Engineering">
+                  Mechanical Engineering
+                </option>
+
+                <option value="Civil Engineering">
+                  Civil Engineering
+                </option>
+
+              </select>
+
+              <select
+                value={
+                  editingStudent.year
+                }
+                onChange={(e) =>
+                  setEditingStudent(
+                    (prev) => ({
+                      ...prev,
+                      year:
+                        e.target.value,
+                    })
+                  )
+                }
+              >
+
+                <option value="">
+                  Select Year
+                </option>
+
+                <option value="1st Year">
+                  1st Year
+                </option>
+
+                <option value="2nd Year">
+                  2nd Year
+                </option>
+
+                <option value="3rd Year">
+                  3rd Year
+                </option>
+
+                <option value="4th Year">
+                  4th Year
+                </option>
+
+              </select>
+
+              <div className="admin-modal-actions">
+
+                <button
+                  type="button"
+                  className="admin-cancel-btn"
+                  onClick={() =>
+                    setEditingStudent(
+                      null
+                    )
+                  }
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="submit"
+                  className="admin-update-btn"
+                  disabled={
+                    actionLoading
+                  }
+                >
+                  Update Student
+                </button>
+
+              </div>
+
+            </form>
+
+          </div>
+
+        </div>
+      )}
 
     </div>
   );
