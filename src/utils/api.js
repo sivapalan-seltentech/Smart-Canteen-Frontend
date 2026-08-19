@@ -105,30 +105,30 @@ export const api = {
     request("/auth/logout", {
       method: "POST",
     }),
+// =========================
+// USERS
+// =========================
 
-  // =========================
-  // USERS
-  // =========================
+getUsers: () =>
+  request("/users"),
 
-  getUsers: () =>
-    request("/admin/users"),
+getUser: (id) =>
+  request(`/users/${id}`),
 
-  getUser: (id) =>
-    request(`/admin/users/${id}`),
+updateUser: (id, user) =>
+  request(`/users/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(user),
+  }),
 
-  updateUser: (id, user) =>
-    request(`/admin/users/${id}`, {
-      method: "PUT",
-      body: JSON.stringify(user),
-    }),
+deleteUser: (id) =>
+  request(`/users/${id}`, {
+    method: "DELETE",
+  }),
 
-  deleteUser: (id) =>
-    request(`/admin/users/${id}`, {
-      method: "DELETE",
-    }),
+adminDashboard: () =>
+  request("/admin/dashboard"),
 
-  adminDashboard: () =>
-    request("/admin/dashboard"),
 
   // =========================
   // EMPLOYEES
